@@ -30,6 +30,7 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    ```bash
    cd ~/.claude
    git init
+   git branch -M main
    git remote add origin <REPO_URL>
    git fetch origin
    ```

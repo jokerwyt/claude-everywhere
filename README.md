@@ -15,7 +15,7 @@ for this machine.
 My private github repo for synchronizing: <YOUR REPO ADDRESS>
 ```
 
-Repeat step 3 on every machine you want to sync.
+Repeat on every machine you want to sync.
 
 ## Uninstall — Leave Sync
 
@@ -26,7 +26,7 @@ Remove ClaudeEverywhere from this machine. Run these two commands:
 1. python3 -c "
    import json, os, shutil
    path = os.path.expanduser('~/.claude/settings.json')
-   s = json.load(open(path))
+   s = json.load(open(path)) if os.path.exists(path) else {}
    s.get('hooks', {})['SessionStart'] = [e for e in s.get('hooks', {}).get('SessionStart', []) if not any(h.get('command', '') == 'bash ~/.claude/sync-hook.sh' for h in e.get('hooks', []))]
    if not s['hooks']['SessionStart']: del s['hooks']['SessionStart']
    if not s['hooks']: del s['hooks']

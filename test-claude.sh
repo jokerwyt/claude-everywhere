@@ -6,7 +6,7 @@
 # Usage: bash test-claude.sh
 set -euo pipefail
 
-REPO_DIR="/tmp/ClaudeEverywhere"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEST_ROOT=$(mktemp -d)
 REMOTE="$TEST_ROOT/remote.git"
 HOME_A="$TEST_ROOT/home_a"
@@ -104,7 +104,7 @@ Remove ClaudeEverywhere from this machine. Run these two commands:
 1. python3 -c "
    import json, os, shutil
    path = os.path.expanduser('~/.claude/settings.json')
-   s = json.load(open(path))
+   s = json.load(open(path)) if os.path.exists(path) else {}
    s.get('hooks', {})['SessionStart'] = [e for e in s.get('hooks', {}).get('SessionStart', []) if not any(h.get('command', '') == 'bash ~/.claude/sync-hook.sh' for h in e.get('hooks', []))]
    if not s['hooks']['SessionStart']: del s['hooks']['SessionStart']
    if not s['hooks']: del s['hooks']

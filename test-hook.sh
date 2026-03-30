@@ -10,7 +10,7 @@
 #   5. B makes changes, syncs → A syncs → verify A got B's changes
 #   6. Both make non-conflicting changes simultaneously → verify merge works
 #
-# Usage: bash test-e2e.sh
+# Usage: bash test-hook.sh
 
 set -euo pipefail
 
@@ -80,7 +80,7 @@ already = any(
     for h in entry.get('hooks', [])
 )
 if not already:
-    session_hooks.append({
+    session_hooks.insert(0, {
         'hooks': [{
             'type': 'command',
             'command': hook_cmd,

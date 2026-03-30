@@ -4,17 +4,12 @@ This `~/.claude/` directory is a git repo (`git@github.com:YOUR_USERNAME/YOUR_RE
 
 **How it works**: A `SessionStart` hook runs `sync-hook.sh` on every Claude Code launch — it commits local changes, pulls remote, and pushes. All machines share the single `main` branch.
 
-**Tracked files** (controlled by `.gitignore` whitelist): `CLAUDE.md`, `commands/`, `skills/`, `settings.json`, `sync-hook.sh`, `setup.sh`.
+**Tracked files** (controlled by `.gitignore` whitelist): `CLAUDE.md`, `commands/`, `skills/`, `settings.json`, `sync-hook.sh`.
 
-**New machine setup**:
-```bash
-git clone git@github.com:YOUR_USERNAME/YOUR_REPO.git ~/.claude
-bash ~/.claude/setup.sh
-```
-`setup.sh` configures `settings.json` with the SessionStart hook (merge, not overwrite) and switches to `main`.
+**New machine setup**: Paste the setup prompt from the ClaudeEverywhere README into Claude Code. It reads `SKILL.md` and configures everything automatically.
 
 **Conflict handling**: If `git pull --rebase` fails, the hook aborts the rebase and shows a warning. You can then ask Claude to resolve: `cd ~/.claude && git pull --rebase`.
 
 **Adding new files to sync**: Edit `.gitignore` and add a `!filename` entry. `sync-hook.sh` uses `git add -A`, so any tracked file is auto-synced.
 
-**Note**: `settings.json` is synced but `setup.sh` merges (not replaces) — machine-specific settings are preserved.
+**Note**: `settings.json` is synced. The setup merges the hook into existing settings (not replaces) — machine-specific settings are preserved.
