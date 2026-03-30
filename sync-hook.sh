@@ -73,7 +73,7 @@ DIFF_ESC=$(printf '%s' "$DIFF" | sed 's/"/\\"/g' | tr '\n' '|' | sed 's/|/\\n/g'
 
 # systemMessage: shown to user; additionalContext: injected into Claude's context
 if [ -n "$DIFF_ESC" ]; then
-  echo "{\"systemMessage\":\"[sync] ${SUMMARY}\",\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Config sync result: ${SUMMARY}\\nDiff:\\n${DIFF_ESC}\"}}"
+  echo "{\"systemMessage\":\"[claude-everywhere]${SUMMARY}\",\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Config sync result: ${SUMMARY}\\nDiff:\\n${DIFF_ESC}\"}}"
 else
-  echo "{\"systemMessage\":\"[sync] ${SUMMARY}\",\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Config sync result: ${SUMMARY}\"}}"
+  echo "{\"systemMessage\":\"[claude-everywhere]${SUMMARY}\",\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Config sync result: ${SUMMARY}\"}}"
 fi
