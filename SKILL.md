@@ -4,7 +4,7 @@ description: Set up and manage cross-machine syncing of Claude Code configuratio
 license: MIT
 metadata:
   author: jokerwyt
-  version: "2.0"
+  version: "2.1"
 compatibility: Requires git. Works on macOS and Linux.
 ---
 
@@ -24,17 +24,19 @@ A `.gitignore` whitelist controls what gets synced (only explicitly listed patte
 
 ## Setup Instructions
 
-The user will provide a git repo URL. The repo can be empty or contain existing ClaudeEverywhere files.
+The user will provide a git repo URL (from the README). The repo can be empty or contain existing ClaudeEverywhere files. Since setup is always done from within Claude Code, `~/.claude/` already exists.
 
-### New Setup (no existing ~/.claude)
-
-1. Clone the repo:
+1. Initialize git and connect to remote:
    ```bash
-   git clone <REPO_URL> ~/.claude
+   cd ~/.claude
+   git init
+   git remote add origin <REPO_URL>
+   git fetch origin
    ```
-2. If the repo is empty, copy the scaffolding files (`sync-hook.sh`, `.gitignore`) into `~/.claude/` and create an initial commit.
-3. Run `chmod +x ~/.claude/sync-hook.sh`
-4. Merge the SessionStart hook into `~/.claude/settings.json` (create if missing). The hook entry must be:
+2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then `git checkout -- sync-hook.sh .gitignore` to ensure scripts are present. **Note**: after `git reset`, the git index may differ from the working tree — always read files from disk (not via `git show`) in subsequent steps.
+3. If the remote is empty: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
+4. Run `chmod +x ~/.claude/sync-hook.sh`
+5. Read the **current** `~/.claude/settings.json` from disk (NOT from git index). Merge the SessionStart hook into it. The user's existing keys (permissions, model, etc.) MUST be preserved — only add the `hooks.SessionStart` entry if the `"bash ~/.claude/sync-hook.sh"` command is not already present. If there are already other SessionStart hooks, insert the sync hook as the **first** entry in the array (it must run before other hooks so config is up-to-date). **Warn the user** that existing SessionStart hooks were found and that the sync hook was inserted before them. The hook entry to merge:
    ```json
    {
      "hooks": {
@@ -53,31 +55,11 @@ The user will provide a git repo URL. The repo can be empty or contain existing 
      }
    }
    ```
-   **Important**: merge this into existing settings.json — do NOT overwrite existing keys (permissions, model, etc.). Only add the SessionStart hook if not already present.
-5. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
-
-### Existing ~/.claude Directory
-
-1. Initialize git and connect to remote:
-   ```bash
-   cd ~/.claude
-   git init
-   git remote add origin <REPO_URL>
-   git fetch origin
-   ```
-2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then `git checkout -- sync-hook.sh .gitignore` to ensure scripts are present.
-3. If the remote is empty: copy the scaffolding files (`sync-hook.sh`, `.gitignore`) into `~/.claude/`.
-4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. Read the **current** `~/.claude/settings.json` from disk (NOT from git index). Merge the SessionStart hook into it (same JSON structure as above). The user's existing keys (permissions, model, etc.) MUST be preserved — only add the `hooks.SessionStart` entry if the `"bash ~/.claude/sync-hook.sh"` command is not already present. Write the merged result back.
 6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
-
-### Additional Machines
-
-Same as "New Setup" — clone, set up hook, sync.
 
 ## Scaffolding Files
 
-When setting up an empty repo, you need to create these files in `~/.claude/`:
+When setting up with an empty repo, create these files in `~/.claude/`:
 
 ### .gitignore
 ```gitignore

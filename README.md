@@ -6,14 +6,13 @@ Every time Claude Code starts, a SessionStart hook automatically commits local c
 
 ## Setup — Join Sync
 
-1. Create a **private** GitHub repo to store your config (can be empty).
-2. Fill in your repo URL at the bottom of this file.
-3. Copy the prompt below and paste it into Claude Code. It will handle the rest.
+1. Create a **private** empty GitHub repo to store your config.
+2. Copy the prompt below, fill `<YOUR REPO ADDRESS>`, and paste it into Claude Code. It will handle the rest.
 
 ```
 Read the SKILL.md at this repo and follow its instructions to set up config sync
-for this machine. If ~/.claude already exists, use the "Existing ~/.claude Directory"
-flow to preserve my existing files. If not, use the "New Setup" flow.
+for this machine.
+My private github repo for synchronizing: <YOUR REPO ADDRESS>
 ```
 
 Repeat step 3 on every machine you want to sync.
@@ -34,5 +33,3 @@ Remove ClaudeEverywhere from this machine:
 MIT
 
 ---
-
-Private repo: `git@github.com:YOUR_USERNAME/YOUR_REPO.git`
