@@ -36,25 +36,22 @@ The user will provide a git repo URL (from the README). The repo can be empty or
 2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then `git checkout -- sync-hook.sh .gitignore` to ensure scripts are present. **Note**: after `git reset`, the git index may differ from the working tree — always read files from disk (not via `git show`) in subsequent steps.
 3. If the remote is empty: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
 4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. Read the **current** `~/.claude/settings.json` from disk (NOT from git index). Merge the SessionStart hook into it. The user's existing keys (permissions, model, etc.) MUST be preserved — only add the `hooks.SessionStart` entry if the `"bash ~/.claude/sync-hook.sh"` command is not already present. If there are already other SessionStart hooks, insert the sync hook as the **first** entry in the array (it must run before other hooks so config is up-to-date). **Warn the user** that existing SessionStart hooks were found and that the sync hook was inserted before them. The hook entry to merge:
-   ```json
-   {
-     "hooks": {
-       "SessionStart": [
-         {
-           "hooks": [
-             {
-               "type": "command",
-               "command": "bash ~/.claude/sync-hook.sh",
-               "timeout": 30,
-               "statusMessage": "Syncing claude config..."
-             }
-           ]
-         }
-       ]
-     }
-   }
+5. Run this exact command to merge the SessionStart hook into settings.json (creates the file if missing, preserves all existing keys, inserts the hook as the first SessionStart entry):
+   ```bash
+   python3 -c "
+   import json, os
+   path = os.path.expanduser('~/.claude/settings.json')
+   settings = json.load(open(path)) if os.path.exists(path) else {}
+   hook_cmd = 'bash ~/.claude/sync-hook.sh'
+   hooks = settings.setdefault('hooks', {})
+   session_hooks = hooks.setdefault('SessionStart', [])
+   if not any(h.get('command') == hook_cmd for e in session_hooks for h in e.get('hooks', [])):
+       session_hooks.insert(0, {'hooks': [{'type': 'command', 'command': hook_cmd, 'timeout': 30, 'statusMessage': 'Syncing claude config...'}]})
+   with open(path, 'w') as f: json.dump(settings, f, indent=2); f.write('\n')
+   print('SessionStart hook configured in', path)
+   "
    ```
+   After running, verify by reading `~/.claude/settings.json` and confirming `"bash ~/.claude/sync-hook.sh"` appears in it.
 6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
 ## Scaffolding Files
