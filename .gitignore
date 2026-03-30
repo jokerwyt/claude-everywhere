@@ -1,0 +1,17 @@
+# Only track config files that should sync across machines
+*
+!.gitignore
+!settings.json
+!CLAUDE.md
+!commands/
+!commands/*.md
+!skills/
+!skills/*/
+!skills/*/*.md
+!sync-hook.sh
+!setup.sh
+!README.md
+!SKILL.md
+!LICENSE
+!CLAUDE.md.example
+!settings.json.example
