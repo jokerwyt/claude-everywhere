@@ -57,10 +57,41 @@ claude_launch() {
   HOME="$home" bash "$home/.claude/sync-hook.sh" 2>/dev/null
 }
 
-# Run setup.sh on a machine
-run_setup() {
+# Simulate what Claude would do: merge SessionStart hook into settings.json
+# This replaces setup.sh — Claude does this directly based on SKILL.md instructions
+merge_hook() {
   local home="$1"
-  HOME="$home" bash "$home/.claude/setup.sh" 2>/dev/null
+  local settings="$home/.claude/settings.json"
+  chmod +x "$home/.claude/sync-hook.sh"
+  python3 -c "
+import json, os, sys
+path = sys.argv[1]
+if os.path.exists(path):
+    with open(path) as f:
+        settings = json.load(f)
+else:
+    settings = {}
+hook_cmd = 'bash ~/.claude/sync-hook.sh'
+hooks = settings.setdefault('hooks', {})
+session_hooks = hooks.setdefault('SessionStart', [])
+already = any(
+    h.get('command') == hook_cmd
+    for entry in session_hooks
+    for h in entry.get('hooks', [])
+)
+if not already:
+    session_hooks.append({
+        'hooks': [{
+            'type': 'command',
+            'command': hook_cmd,
+            'timeout': 30,
+            'statusMessage': 'Syncing claude config...'
+        }]
+    })
+with open(path, 'w') as f:
+    json.dump(settings, f, indent=2)
+    f.write('\n')
+" "$settings"
 }
 
 echo "=== ClaudeEverywhere E2E Test ==="
@@ -74,13 +105,11 @@ echo "--- Step 0: Create remote repo ---"
 
 git init --bare "$REMOTE" >/dev/null 2>&1
 
-# Seed remote with the repo content
+# Seed remote with scaffolding (sync-hook.sh + .gitignore)
 seed=$(mktemp -d)
 git clone "$REMOTE" "$seed/repo" >/dev/null 2>&1
-cp "$REPO_DIR"/{sync-hook.sh,setup.sh,.gitignore,CLAUDE.md.example,settings.json.example} "$seed/repo/" 2>/dev/null || true
-cp "$REPO_DIR/.gitignore" "$seed/repo/"
 cp "$REPO_DIR/sync-hook.sh" "$seed/repo/"
-cp "$REPO_DIR/setup.sh" "$seed/repo/"
+cp "$REPO_DIR/.gitignore" "$seed/repo/"
 (cd "$seed/repo" && git add -A && git commit -m "initial scaffolding" >/dev/null 2>&1 && git push >/dev/null 2>&1)
 rm -rf "$seed"
 
@@ -94,7 +123,7 @@ echo "--- Step 1: Machine A joins (fresh clone) ---"
 
 init_home "$HOME_A" "A"
 git clone "$REMOTE" "$HOME_A/.claude" >/dev/null 2>&1
-run_setup "$HOME_A"
+merge_hook "$HOME_A"
 
 assert "A: settings.json exists" "[ -f '$HOME_A/.claude/settings.json' ]"
 assert "A: SessionStart hook is configured" "grep -q 'sync-hook.sh' '$HOME_A/.claude/settings.json'"
@@ -141,8 +170,6 @@ Does something useful.
 BEOF
 
 # B has existing settings with custom permissions
-# Note: settings.json will be merged by setup.sh, and B's version will be synced.
-# A will pick it up on next sync, so both machines converge.
 cat > "$HOME_B/.claude/settings.json" << 'BEOF'
 {
   "permissions": {
@@ -153,18 +180,16 @@ cat > "$HOME_B/.claude/settings.json" << 'BEOF'
 }
 BEOF
 
-# B joins using the git init + reset flow (from README)
-# The reset brings in remote files (including A's settings.json),
-# but B's local settings.json is preserved since reset doesn't touch dirty files.
+# B joins using the git init + reset flow
 (
   cd "$HOME_B/.claude"
   git init >/dev/null 2>&1
   git remote add origin "$REMOTE" >/dev/null 2>&1
   git fetch origin >/dev/null 2>&1
   git reset origin/main >/dev/null 2>&1
-  git checkout -- sync-hook.sh setup.sh .gitignore >/dev/null 2>&1
+  git checkout -- sync-hook.sh .gitignore >/dev/null 2>&1
 )
-run_setup "$HOME_B"
+merge_hook "$HOME_B"
 
 # Commit and push B's existing config
 (
@@ -289,22 +314,9 @@ assert "B: projects/ NOT synced" "[ ! -d '$HOME_B/.claude/projects' ]"
 echo ""
 
 # ============================================================
-# Step 8: setup.sh idempotency
+# Step 8: Nested directories sync
 # ============================================================
-echo "--- Step 8: setup.sh idempotency ---"
-
-hook_count_before=$(grep -c 'sync-hook.sh' "$HOME_A/.claude/settings.json")
-run_setup "$HOME_A"
-hook_count_after=$(grep -c 'sync-hook.sh' "$HOME_A/.claude/settings.json")
-
-assert "setup.sh idempotent (hook not duplicated)" "[ '$hook_count_before' = '$hook_count_after' ]"
-
-echo ""
-
-# ============================================================
-# Step 9: Nested directories sync (issue #5 fix)
-# ============================================================
-echo "--- Step 9: Recursive directory sync ---"
+echo "--- Step 8: Recursive directory sync ---"
 
 mkdir -p "$HOME_A/.claude/commands/sub"
 echo "nested command" > "$HOME_A/.claude/commands/sub/nested.md"

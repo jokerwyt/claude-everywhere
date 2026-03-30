@@ -4,8 +4,8 @@ description: Set up and manage cross-machine syncing of Claude Code configuratio
 license: MIT
 metadata:
   author: jokerwyt
-  version: "1.0"
-compatibility: Requires git and Python 3. Works on macOS and Linux.
+  version: "2.0"
+compatibility: Requires git. Works on macOS and Linux.
 ---
 
 # ClaudeEverywhere: Cross-Machine Claude Code Config Sync
@@ -24,33 +24,77 @@ A `.gitignore` whitelist controls what gets synced (only explicitly listed patte
 
 ## Setup Instructions
 
+The user will provide a git repo URL. The repo can be empty or contain existing ClaudeEverywhere files.
+
 ### New Setup (no existing ~/.claude)
 
-```bash
-# 1. Fork the repo on GitHub, then:
-git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
-bash ~/.claude/setup.sh
-```
+1. Clone the repo:
+   ```bash
+   git clone <REPO_URL> ~/.claude
+   ```
+2. If the repo is empty, copy the scaffolding files (`sync-hook.sh`, `.gitignore`) into `~/.claude/` and create an initial commit.
+3. Run `chmod +x ~/.claude/sync-hook.sh`
+4. Merge the SessionStart hook into `~/.claude/settings.json` (create if missing). The hook entry must be:
+   ```json
+   {
+     "hooks": {
+       "SessionStart": [
+         {
+           "hooks": [
+             {
+               "type": "command",
+               "command": "bash ~/.claude/sync-hook.sh",
+               "timeout": 30,
+               "statusMessage": "Syncing claude config..."
+             }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+   **Important**: merge this into existing settings.json — do NOT overwrite existing keys (permissions, model, etc.). Only add the SessionStart hook if not already present.
+5. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
 ### Existing ~/.claude Directory
 
-```bash
-cd ~/.claude
-git init
-git remote add origin git@github.com:YOUR_USERNAME/ClaudeEverywhere.git
-git fetch origin
-git reset origin/main          # bring in repo files without overwriting existing
-git checkout -- sync-hook.sh setup.sh .gitignore  # ensure scripts are present
-bash setup.sh
-git add -A && git commit -m "initial sync" && git push -u origin main
-```
+1. Initialize git and connect to remote:
+   ```bash
+   cd ~/.claude
+   git init
+   git remote add origin <REPO_URL>
+   git fetch origin
+   ```
+2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then `git checkout -- sync-hook.sh .gitignore` to ensure scripts are present.
+3. If the remote is empty: copy the scaffolding files (`sync-hook.sh`, `.gitignore`) into `~/.claude/`.
+4. Run `chmod +x ~/.claude/sync-hook.sh`
+5. Merge the SessionStart hook into `~/.claude/settings.json` (same JSON structure as above). Preserve all existing settings.
+6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
 ### Additional Machines
 
-```bash
-git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
-bash ~/.claude/setup.sh
+Same as "New Setup" — clone, set up hook, sync.
+
+## Scaffolding Files
+
+When setting up an empty repo, you need to create these files in `~/.claude/`:
+
+### .gitignore
+```gitignore
+# Only track config files that should sync across machines
+*
+!.gitignore
+!settings.json
+!CLAUDE.md
+!commands/
+!commands/**
+!skills/
+!skills/**
+!sync-hook.sh
 ```
+
+### sync-hook.sh
+The sync-hook.sh file is in this same repo. Read it and copy it to `~/.claude/sync-hook.sh`.
 
 ## What Gets Synced
 
@@ -59,7 +103,7 @@ Default whitelist (edit `.gitignore` to add more):
 - `settings.json` — Claude Code settings
 - `commands/` — custom slash commands (recursive)
 - `skills/` — custom skills (recursive)
-- `sync-hook.sh`, `setup.sh` — the sync system itself
+- `sync-hook.sh` — the sync system itself
 
 ## Adding Files to Sync
 
@@ -80,10 +124,7 @@ cd ~/.claude && git pull --rebase
 Resolve conflicts, then `git rebase --continue`.
 
 ### Timeout
-Git operations have a 15s timeout. If network is slow, the hook skips gracefully. Next launch will retry.
-
-### setup.sh Fails
-Requires Python 3 for JSON merging. Alternatively, manually add the hook — see `settings.json.example`.
+Git operations have a 15s internal timeout (30s hook timeout). If network is slow, the hook skips gracefully. Next launch will retry.
 
 ## Documenting the Sync in CLAUDE.md
 

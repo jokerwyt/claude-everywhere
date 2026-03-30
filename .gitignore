@@ -8,10 +8,8 @@
 !skills/
 !skills/**
 !sync-hook.sh
-!setup.sh
+
 !README.md
 !SKILL.md
 !LICENSE
-!CLAUDE.md.example
-!settings.json.example
 !test-e2e.sh
