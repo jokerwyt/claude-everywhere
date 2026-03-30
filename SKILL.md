@@ -68,7 +68,7 @@ The user will provide a git repo URL. The repo can be empty or contain existing 
 2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then `git checkout -- sync-hook.sh .gitignore` to ensure scripts are present.
 3. If the remote is empty: copy the scaffolding files (`sync-hook.sh`, `.gitignore`) into `~/.claude/`.
 4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. Merge the SessionStart hook into `~/.claude/settings.json` (same JSON structure as above). Preserve all existing settings.
+5. Read the **current** `~/.claude/settings.json` from disk (NOT from git index). Merge the SessionStart hook into it (same JSON structure as above). The user's existing keys (permissions, model, etc.) MUST be preserved — only add the `hooks.SessionStart` entry if the `"bash ~/.claude/sync-hook.sh"` command is not already present. Write the merged result back.
 6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
 ### Additional Machines
