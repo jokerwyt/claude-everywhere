@@ -6,9 +6,15 @@ cd ~/.claude || exit 0
 # Trap timeout (SIGTERM) — clean up and warn
 trap 'git rebase --abort >/dev/null 2>&1; echo "{\"systemMessage\":\"⚠ Config sync timed out, skipped.\"}"; exit 0' TERM
 
-# Run a git command with internal timeout; sets TIMED_OUT=1 if exceeded
+# Portable timeout: macOS lacks coreutils `timeout`, try gtimeout, else skip
 run_with_timeout() {
-  timeout "$INTERNAL_TIMEOUT" "$@"
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$INTERNAL_TIMEOUT" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$INTERNAL_TIMEOUT" "$@"
+  else
+    "$@"
+  fi
   local rc=$?
   if [ $rc -eq 124 ]; then
     SUMMARY="${SUMMARY}⚠ '${*}' timed out (>${INTERNAL_TIMEOUT}s). "
