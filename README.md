@@ -21,50 +21,27 @@ The sync is controlled by a `.gitignore` whitelist — only explicitly listed fi
 
 ## Quick Start
 
-### 1. Fork this repo
+Prerequisites: Fork this repo on GitHub first (e.g., `your-username/ClaudeEverywhere`).
 
-Click **Fork** on GitHub to create your own copy (e.g., `your-username/ClaudeEverywhere`).
-
-### 2. Back up existing config (if any)
+Apply to an existing `~/.claude` directory:
 
 ```bash
-# If you already have ~/.claude with content you want to keep:
-cp -r ~/.claude ~/.claude.bak
+# 1. Init git in existing ~/.claude, point to your fork, pull scaffolding
+cd ~/.claude
+git init
+git remote add origin git@github.com:YOUR_USERNAME/ClaudeEverywhere.git
+git fetch origin
+git reset origin/main          # bring in repo files without overwriting existing
+git checkout -- sync-hook.sh setup.sh .gitignore  # ensure scripts are present
+
+# 2. Run setup (merges SessionStart hook into existing settings.json)
+bash setup.sh
+
+# 3. Commit & push your existing config
+git add -A && git commit -m "initial sync" && git push -u origin main
 ```
 
-### 3. Clone to `~/.claude`
-
-```bash
-# Remove or move existing ~/.claude directory first
-mv ~/.claude ~/.claude.bak  # or: rm -rf ~/.claude
-
-git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
-```
-
-### 4. Restore your existing files
-
-```bash
-# Copy back your CLAUDE.md, skills, commands, etc.
-cp ~/.claude.bak/CLAUDE.md ~/.claude/CLAUDE.md
-cp -r ~/.claude.bak/skills ~/.claude/skills
-cp -r ~/.claude.bak/commands ~/.claude/commands
-# ... any other files you want to sync
-```
-
-### 5. Run setup
-
-```bash
-bash ~/.claude/setup.sh
-```
-
-This will:
-- Switch to the `main` branch
-- Make `sync-hook.sh` executable
-- Add the SessionStart hook to your `settings.json` (merge, not overwrite — existing settings are preserved)
-
-### 6. Start Claude Code
-
-The next time Claude Code starts, it will automatically sync your config.
+On additional machines: `git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude && bash ~/.claude/setup.sh`
 
 ## What Gets Synced
 
@@ -110,17 +87,6 @@ If you sync `settings.json` across machines, be aware that machine-specific sett
 - Git operations have a 15-second internal timeout
 - If a pull/push times out (e.g., no network), the hook skips gracefully
 - The hook outputs a JSON status message that Claude Code displays
-
-## Setting Up Additional Machines
-
-On each new machine:
-
-```bash
-git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
-bash ~/.claude/setup.sh
-```
-
-That's it. Every machine shares the same `main` branch.
 
 ## FAQ
 
