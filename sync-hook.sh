@@ -24,6 +24,7 @@ run_with_timeout() {
 }
 
 SUMMARY=""
+DIFF=""
 
 # 1. Commit local changes
 git add -A 2>/dev/null
@@ -42,7 +43,14 @@ if run_with_timeout git pull --rebase --autostash >/dev/null 2>&1; then
     DIFF=$(git diff --stat "$OLD_HEAD" "$NEW_HEAD" 2>/dev/null)
     SUMMARY="${SUMMARY}Pulled: ${PULLED//$'\n'/, }. "
   fi
-  run_with_timeout git push >/dev/null 2>&1
+  run_with_timeout git push >/dev/null 2>&1 || {
+    # Push failed (e.g., remote updated between pull and push). Retry once.
+    if run_with_timeout git pull --rebase --autostash >/dev/null 2>&1; then
+      run_with_timeout git push >/dev/null 2>&1
+    else
+      git rebase --abort >/dev/null 2>&1
+    fi
+  }
 else
   git rebase --abort >/dev/null 2>&1
   # Only add conflict message if not already a timeout message

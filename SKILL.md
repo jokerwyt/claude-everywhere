@@ -35,20 +35,14 @@ bash ~/.claude/setup.sh
 ### Existing ~/.claude Directory
 
 ```bash
-# 1. Back up
-cp -r ~/.claude ~/.claude.bak
-
-# 2. Clone (remove existing dir first)
-rm -rf ~/.claude
-git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
-
-# 3. Restore your files
-cp ~/.claude.bak/CLAUDE.md ~/.claude/CLAUDE.md
-cp -r ~/.claude.bak/skills ~/.claude/skills
-cp -r ~/.claude.bak/commands ~/.claude/commands
-
-# 4. Run setup
-bash ~/.claude/setup.sh
+cd ~/.claude
+git init
+git remote add origin git@github.com:YOUR_USERNAME/ClaudeEverywhere.git
+git fetch origin
+git reset origin/main          # bring in repo files without overwriting existing
+git checkout -- sync-hook.sh setup.sh .gitignore  # ensure scripts are present
+bash setup.sh
+git add -A && git commit -m "initial sync" && git push -u origin main
 ```
 
 ### Additional Machines
@@ -63,8 +57,8 @@ bash ~/.claude/setup.sh
 Default whitelist (edit `.gitignore` to add more):
 - `CLAUDE.md` — global instructions
 - `settings.json` — Claude Code settings
-- `commands/*.md` — custom slash commands
-- `skills/*/*.md` — custom skills
+- `commands/` — custom slash commands (recursive)
+- `skills/` — custom skills (recursive)
 - `sync-hook.sh`, `setup.sh` — the sync system itself
 
 ## Adding Files to Sync

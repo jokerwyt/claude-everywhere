@@ -4,10 +4,9 @@
 !settings.json
 !CLAUDE.md
 !commands/
-!commands/*.md
+!commands/**
 !skills/
-!skills/*/
-!skills/*/*.md
+!skills/**
 !sync-hook.sh
 !setup.sh
 !README.md
@@ -15,3 +14,4 @@
 !LICENSE
 !CLAUDE.md.example
 !settings.json.example
+!test-e2e.sh

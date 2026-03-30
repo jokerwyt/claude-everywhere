@@ -23,10 +23,25 @@ The sync is controlled by a `.gitignore` whitelist — only explicitly listed fi
 
 Prerequisites: Fork this repo on GitHub first (e.g., `your-username/ClaudeEverywhere`).
 
-Apply to an existing `~/.claude` directory:
+The easiest way to set up is to give this repo's URL to Claude Code and ask it to help you install:
+
+```
+Give Claude: https://github.com/YOUR_USERNAME/ClaudeEverywhere
+Ask: "Help me set up ClaudeEverywhere for syncing my ~/.claude config"
+```
+
+Or set up manually:
+
+### Fresh machine (no existing `~/.claude`)
 
 ```bash
-# 1. Init git in existing ~/.claude, point to your fork, pull scaffolding
+git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
+bash ~/.claude/setup.sh
+```
+
+### Existing `~/.claude` directory
+
+```bash
 cd ~/.claude
 git init
 git remote add origin git@github.com:YOUR_USERNAME/ClaudeEverywhere.git
@@ -34,14 +49,19 @@ git fetch origin
 git reset origin/main          # bring in repo files without overwriting existing
 git checkout -- sync-hook.sh setup.sh .gitignore  # ensure scripts are present
 
-# 2. Run setup (merges SessionStart hook into existing settings.json)
+# Run setup (merges SessionStart hook into existing settings.json)
 bash setup.sh
 
-# 3. Commit & push your existing config
+# Commit & push your existing config
 git add -A && git commit -m "initial sync" && git push -u origin main
 ```
 
-On additional machines: `git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude && bash ~/.claude/setup.sh`
+### Additional machines
+
+```bash
+git clone git@github.com:YOUR_USERNAME/ClaudeEverywhere.git ~/.claude
+bash ~/.claude/setup.sh
+```
 
 ## What Gets Synced
 
@@ -51,8 +71,8 @@ Controlled by `.gitignore` (whitelist pattern — everything is ignored except e
 |---------|-----------------|
 | `CLAUDE.md` | Your global instructions |
 | `settings.json` | Claude Code settings (hooks, permissions, etc.) |
-| `commands/*.md` | Custom slash commands |
-| `skills/` + `skills/*/*.md` | Custom skills |
+| `commands/` | Custom slash commands (recursive) |
+| `skills/` | Custom skills (recursive) |
 | `sync-hook.sh` | The sync script itself |
 | `setup.sh` | The bootstrap script |
 
@@ -84,9 +104,12 @@ If you sync `settings.json` across machines, be aware that machine-specific sett
 
 ## Timeout & Error Handling
 
-- Git operations have a 15-second internal timeout
-- If a pull/push times out (e.g., no network), the hook skips gracefully
-- The hook outputs a JSON status message that Claude Code displays
+There are two timeout layers:
+
+- **Hook timeout (30s)**: Set in `settings.json` — Claude Code kills the entire hook if it exceeds this limit.
+- **Internal timeout (15s)**: Set in `sync-hook.sh` — each individual git operation (`pull`, `push`) is capped at 15s so a slow network doesn't consume the full hook budget.
+
+If a git operation times out (e.g., no network), the hook skips gracefully and the next launch will retry. The hook outputs a JSON status message that Claude Code displays.
 
 ## FAQ
 
@@ -102,13 +125,37 @@ A: No. The `.gitignore` whitelist only tracks the files you explicitly allow. Co
 **Q: What if `setup.sh` fails?**
 A: It requires Python 3 (for JSON merging). Most systems have this. If not, you can manually add the hook to `settings.json` — see `settings.json.example`.
 
-## Agent Skill
+## Uninstall
 
-This repo includes a `SKILL.md` file following the [Agent Skills](https://agentskills.io) specification. You can install it as a skill:
+To stop syncing and remove ClaudeEverywhere:
 
 ```bash
-npx skills add YOUR_USERNAME/ClaudeEverywhere
+# 1. Remove the SessionStart hook from settings.json
+python3 -c "
+import json
+path = '$HOME/.claude/settings.json'
+with open(path) as f:
+    s = json.load(f)
+hooks = s.get('hooks', {}).get('SessionStart', [])
+s['hooks']['SessionStart'] = [
+    e for e in hooks
+    if not any(h.get('command') == 'bash ~/.claude/sync-hook.sh' for h in e.get('hooks', []))
+]
+if not s['hooks']['SessionStart']:
+    del s['hooks']['SessionStart']
+if not s['hooks']:
+    del s['hooks']
+with open(path, 'w') as f:
+    json.dump(s, f, indent=2)
+    f.write('\n')
+print('Hook removed from settings.json')
+"
+
+# 2. Remove git tracking (keeps your files intact)
+rm -rf ~/.claude/.git ~/.claude/sync-hook.sh ~/.claude/setup.sh
 ```
+
+Your `CLAUDE.md`, `settings.json`, skills, and commands remain untouched — only the git sync is removed.
 
 ## License
 
