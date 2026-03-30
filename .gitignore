@@ -12,4 +12,5 @@
 !README.md
 !SKILL.md
 !LICENSE
-!test-script-unit.sh
+!test-hook.sh
+!test-claude.sh

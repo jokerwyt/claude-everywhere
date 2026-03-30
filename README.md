@@ -22,10 +22,26 @@ Repeat step 3 on every machine you want to sync.
 Copy the prompt below and paste it into Claude Code. Your config files (CLAUDE.md, settings.json, skills, commands) will NOT be deleted — only the sync mechanism is removed.
 
 ```
-Remove ClaudeEverywhere from this machine:
-1. Remove the SessionStart hook entry containing "sync-hook.sh" from ~/.claude/settings.json
-2. Delete these files: ~/.claude/.git, ~/.claude/sync-hook.sh, ~/.claude/.gitignore
-3. Keep everything else (CLAUDE.md, settings.json, skills, commands) intact
+Remove ClaudeEverywhere from this machine. Run these two commands:
+1. python3 -c "
+   import json, os, shutil
+   path = os.path.expanduser('~/.claude/settings.json')
+   s = json.load(open(path))
+   s.get('hooks', {})['SessionStart'] = [e for e in s.get('hooks', {}).get('SessionStart', []) if not any(h.get('command', '') == 'bash ~/.claude/sync-hook.sh' for h in e.get('hooks', []))]
+   if not s['hooks']['SessionStart']: del s['hooks']['SessionStart']
+   if not s['hooks']: del s['hooks']
+   with open(path, 'w') as f: json.dump(s, f, indent=2); f.write('\n')
+   print('Hook removed from', path)
+   "
+2. python3 -c "
+   import os, shutil
+   base = os.path.expanduser('~/.claude')
+   for f in ['.git', 'sync-hook.sh', '.gitignore']:
+       p = os.path.join(base, f)
+       if os.path.isdir(p): shutil.rmtree(p)
+       elif os.path.exists(p): os.remove(p)
+       print('Removed', p)
+   "
 ```
 
 ## License
