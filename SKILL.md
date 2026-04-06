@@ -26,6 +26,12 @@ A `.gitignore` whitelist controls what gets synced (only explicitly listed patte
 
 The user will provide a git repo URL (from the README). The repo can be empty or contain existing claude-everywhere files. Since setup is always done from within Claude Code, `~/.claude/` already exists.
 
+0. **Backup** — before any changes, back up the user's current config:
+   ```bash
+   cp -a ~/.claude ~/.claude.bak.$(date +%Y%m%d%H%M%S)
+   ```
+   Tell the user the backup path.
+
 1. Initialize git and connect to remote:
    ```bash
    cd ~/.claude
