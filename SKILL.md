@@ -42,31 +42,36 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    **Important**: do NOT read `settings.json` after this step — step 5 handles it. After `git reset`, the git index may differ from the working tree for files that existed locally; ignore the index and proceed directly to step 4.
 3. If the remote is empty: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
 4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. **ALWAYS run this command** — even if you think the hook might already be present. It is idempotent and handles all cases: merges the remote settings.json (from git index) with local settings.json (local keys take priority), adds the sync hook as the first SessionStart entry, and preserves all existing settings from both machines:
+5. **ALWAYS run this command** — even if you think the hook might already be present. It merges remote and local settings.json, reports conflicts, and adds the sync hook:
    ```bash
    python3 -c "
    import json, os, subprocess
    path = os.path.expanduser('~/.claude/settings.json')
    local = json.load(open(path)) if os.path.exists(path) else {}
-   # Try to read remote settings.json from git index
    try:
        remote_str = subprocess.check_output(['git', 'show', 'HEAD:settings.json'], cwd=os.path.expanduser('~/.claude'), stderr=subprocess.DEVNULL).decode()
        remote = json.loads(remote_str)
    except Exception:
        remote = {}
-   # Deep merge: remote as base, local overrides
-   def merge(base, override):
+   # Detect conflicts and merge non-conflicting keys
+   conflicts = []
+   def merge(base, override, path_prefix=''):
        result = dict(base)
        for k, v in override.items():
+           key_path = f'{path_prefix}.{k}' if path_prefix else k
            if k in result and isinstance(result[k], dict) and isinstance(v, dict):
-               result[k] = merge(result[k], v)
-           elif k in result and isinstance(result[k], list) and isinstance(v, list):
-               # For lists, use override's version (local wins)
-               result[k] = v
+               result[k] = merge(result[k], v, key_path)
+           elif k in result and result[k] != v:
+               conflicts.append((key_path, result[k], v))
+               result[k] = v  # local wins by default, user can override
            else:
                result[k] = v
        return result
    settings = merge(remote, local)
+   if conflicts:
+       print('CONFLICTS DETECTED:')
+       for key, remote_val, local_val in conflicts:
+           print(f'  {key}: remote={json.dumps(remote_val)} vs local={json.dumps(local_val)}')
    # Add sync hook
    hook_cmd = 'bash ~/.claude/sync-hook.sh'
    hooks = settings.setdefault('hooks', {})
@@ -77,6 +82,7 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    print('SessionStart hook configured in', path)
    "
    ```
+   If the output shows `CONFLICTS DETECTED`, present each conflict to the user (showing the remote value vs local value) and ask which to keep. Then update `~/.claude/settings.json` accordingly.
    After running, verify by reading `~/.claude/settings.json` and confirming `"bash ~/.claude/sync-hook.sh"` appears in it.
 6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
