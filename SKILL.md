@@ -34,45 +34,28 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    git remote add origin <REPO_URL>
    git fetch origin
    ```
-2. If the remote has commits: `git reset origin/main` to bring in repo files without overwriting existing local files. Then check out files that exist in the remote but not locally (new files from other machines), and always force-checkout the scripts:
-   ```bash
-   git diff --name-only --diff-filter=D | xargs -I{} git checkout -- {}
-   git checkout -- sync-hook.sh .gitignore
-   ```
-   **Important**: do NOT read `settings.json` after this step — step 5 handles it. After `git reset`, the git index may differ from the working tree for files that existed locally; ignore the index and proceed directly to step 4.
-3. If the remote is empty: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
+2. **If the remote has commits** (i.e., another machine already set up):
+   a. Checkout `.gitignore` and `sync-hook.sh` from remote so `.gitignore` takes effect:
+      ```bash
+      git checkout origin/main -- .gitignore sync-hook.sh
+      ```
+   b. Commit all local tracked files (`.gitignore` filters out conversations/caches):
+      ```bash
+      git add -A && git commit -m "local state before merge"
+      ```
+   c. Merge remote into local — git handles conflicts natively:
+      ```bash
+      git merge origin/main --allow-unrelated-histories -m "merge remote config"
+      ```
+      If there are merge conflicts (e.g., in `settings.json` or `CLAUDE.md`), show the conflicts to the user and ask how to resolve. After resolving, run `git add -A && git commit`.
+3. **If the remote is empty**: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
 4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. **ALWAYS run this command** — even if you think the hook might already be present. It merges remote and local settings.json, reports conflicts, and adds the sync hook:
+5. **ALWAYS run this command** — it is idempotent. Adds the sync hook to `settings.json` (creates it if missing, preserves all existing keys):
    ```bash
    python3 -c "
-   import json, os, subprocess
+   import json, os
    path = os.path.expanduser('~/.claude/settings.json')
-   local = json.load(open(path)) if os.path.exists(path) else {}
-   try:
-       remote_str = subprocess.check_output(['git', 'show', 'HEAD:settings.json'], cwd=os.path.expanduser('~/.claude'), stderr=subprocess.DEVNULL).decode()
-       remote = json.loads(remote_str)
-   except Exception:
-       remote = {}
-   # Detect conflicts and merge non-conflicting keys
-   conflicts = []
-   def merge(base, override, path_prefix=''):
-       result = dict(base)
-       for k, v in override.items():
-           key_path = f'{path_prefix}.{k}' if path_prefix else k
-           if k in result and isinstance(result[k], dict) and isinstance(v, dict):
-               result[k] = merge(result[k], v, key_path)
-           elif k in result and result[k] != v:
-               conflicts.append((key_path, result[k], v))
-               result[k] = v  # local wins by default, user can override
-           else:
-               result[k] = v
-       return result
-   settings = merge(remote, local)
-   if conflicts:
-       print('CONFLICTS DETECTED:')
-       for key, remote_val, local_val in conflicts:
-           print(f'  {key}: remote={json.dumps(remote_val)} vs local={json.dumps(local_val)}')
-   # Add sync hook
+   settings = json.load(open(path)) if os.path.exists(path) else {}
    hook_cmd = 'bash ~/.claude/sync-hook.sh'
    hooks = settings.setdefault('hooks', {})
    session_hooks = hooks.setdefault('SessionStart', [])
@@ -82,7 +65,6 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    print('SessionStart hook configured in', path)
    "
    ```
-   If the output shows `CONFLICTS DETECTED`, present each conflict to the user (showing the remote value vs local value) and ask which to keep. Then update `~/.claude/settings.json` accordingly.
    After running, verify by reading `~/.claude/settings.json` and confirming `"bash ~/.claude/sync-hook.sh"` appears in it.
 6. Commit and push: `git add -A && git commit -m "initial sync" && git push -u origin main`
 
