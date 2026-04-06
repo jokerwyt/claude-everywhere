@@ -13,6 +13,7 @@ Every time Claude Code starts, a SessionStart hook automatically commits local c
 Read the SKILL.md at this repo and follow its instructions to set up config sync
 for this machine.
 My private github repo for synchronizing: <YOUR REPO ADDRESS>
+You should tell the claude code the address of this repo: https://github.com/jokerwyt/ClaudeEverywhere
 ```
 
 Repeat on every machine you want to sync.
@@ -47,5 +48,3 @@ Remove ClaudeEverywhere from this machine. Run these two commands:
 ## License
 
 MIT
-
----
