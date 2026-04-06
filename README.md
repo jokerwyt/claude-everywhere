@@ -4,7 +4,21 @@ Sync your Claude Code configuration (`~/.claude/`) across all your machines usin
 
 Every time Claude Code starts, a SessionStart hook automatically commits local changes, pulls remote updates, and pushes — so your `CLAUDE.md`, `settings.json`, custom skills, and slash commands stay in sync. A `.gitignore` whitelist ensures only config files are tracked; conversation logs, caches, and other runtime data stay local.
 
+## What Gets Synced
+
+The default `.gitignore` whitelist syncs these files:
+
+- `CLAUDE.md` — global instructions for Claude
+- `settings.json` — Claude Code settings (hooks, permissions, model, etc.)
+- `commands/` — custom slash commands (recursive)
+- `skills/` — custom skills (recursive)
+- `sync-hook.sh` — the sync script itself
+
+Everything else in `~/.claude/` (conversations, caches, sessions) stays local. To add more files, edit `.gitignore` and add `!pattern`.
+
 ## Setup — Join Sync
+
+**Prerequisites**: Git and SSH key (or HTTPS token) configured for GitHub on this machine.
 
 1. Create a **private** empty GitHub repo to store your config.
 2. Copy the prompt below, replace `<YOUR REPO ADDRESS>` with your private repo URL, and paste it into Claude Code.
