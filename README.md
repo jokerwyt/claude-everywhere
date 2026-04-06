@@ -10,7 +10,8 @@ Every time Claude Code starts, a SessionStart hook automatically commits local c
 2. Copy the prompt below, replace `<YOUR REPO ADDRESS>` with your private repo URL, and paste it into Claude Code.
 
 ```
-Clone https://github.com/jokerwyt/ClaudeEverywhere to a temp directory (prefer gh if available, otherwise git clone), read the SKILL.md and follow its instructions to set up config sync for this machine.
+Run: git clone https://github.com/jokerwyt/ClaudeEverywhere.git /tmp/ClaudeEverywhere
+Then read /tmp/ClaudeEverywhere/SKILL.md and follow its instructions to set up config sync for this machine.
 My private github repo for synchronizing: <YOUR REPO ADDRESS>
 ```
 
