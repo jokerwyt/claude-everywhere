@@ -42,6 +42,7 @@ Remove claude-everywhere from this machine. Run these two commands:
        elif os.path.exists(p): os.remove(p)
        print('Removed', p)
    "
+3. Read ~/.claude/CLAUDE.md and remove the "Config Sync System" section (and any other claude-everywhere related content). Keep everything else unchanged.
 ```
 
 ## License
