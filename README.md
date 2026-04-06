@@ -1,4 +1,4 @@
-# ClaudeEverywhere
+# claude-everywhere
 
 Sync your Claude Code configuration (`~/.claude/`) across all your machines using git.
 
@@ -22,7 +22,7 @@ Repeat on every machine you want to sync.
 Copy the prompt below and paste it into Claude Code. Your config files (CLAUDE.md, settings.json, skills, commands) will NOT be deleted — only the sync mechanism is removed.
 
 ```
-Remove ClaudeEverywhere from this machine. Run these two commands:
+Remove claude-everywhere from this machine. Run these two commands:
 1. python3 -c "
    import json, os, shutil
    path = os.path.expanduser('~/.claude/settings.json')

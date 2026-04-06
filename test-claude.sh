@@ -100,7 +100,7 @@ for this machine.
 My private github repo for synchronizing: %s'
 
 UNINSTALL_PROMPT=$(cat <<'EOFPROMPT'
-Remove ClaudeEverywhere from this machine. Run these two commands:
+Remove claude-everywhere from this machine. Run these two commands:
 1. python3 -c "
    import json, os, shutil
    path = os.path.expanduser('~/.claude/settings.json')
@@ -123,7 +123,7 @@ Remove ClaudeEverywhere from this machine. Run these two commands:
 EOFPROMPT
 )
 
-echo "=== ClaudeEverywhere Comprehensive E2E Test ==="
+echo "=== claude-everywhere Comprehensive E2E Test ==="
 echo "Test root: $TEST_ROOT"
 echo ""
 

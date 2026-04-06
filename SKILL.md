@@ -8,7 +8,7 @@ metadata:
 compatibility: Requires git. Works on macOS and Linux.
 ---
 
-# ClaudeEverywhere: Cross-Machine Claude Code Config Sync
+# claude-everywhere: Cross-Machine Claude Code Config Sync
 
 Sync your `~/.claude/` directory (CLAUDE.md, settings.json, skills, commands) across all machines using git + a SessionStart hook.
 
@@ -24,7 +24,7 @@ A `.gitignore` whitelist controls what gets synced (only explicitly listed patte
 
 ## Setup Instructions
 
-The user will provide a git repo URL (from the README). The repo can be empty or contain existing ClaudeEverywhere files. Since setup is always done from within Claude Code, `~/.claude/` already exists.
+The user will provide a git repo URL (from the README). The repo can be empty or contain existing claude-everywhere files. Since setup is always done from within Claude Code, `~/.claude/` already exists.
 
 1. Initialize git and connect to remote:
    ```bash

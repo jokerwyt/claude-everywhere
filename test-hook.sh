@@ -1,9 +1,9 @@
 #!/bin/bash
-# End-to-end test for ClaudeEverywhere config sync.
+# End-to-end test for claude-everywhere config sync.
 # Simulates two machines (A and B) syncing through a shared git remote.
 #
 # Scenario:
-#   1. Create a bare "GitHub" remote seeded with ClaudeEverywhere scaffolding
+#   1. Create a bare "GitHub" remote seeded with claude-everywhere scaffolding
 #   2. Machine A: fresh clone + setup (new machine joining)
 #   3. Machine B: already has ~/.claude with custom config, then joins via git init + reset
 #   4. A makes changes, syncs → B syncs → verify B got A's changes
@@ -94,7 +94,7 @@ with open(path, 'w') as f:
 " "$settings"
 }
 
-echo "=== ClaudeEverywhere E2E Test ==="
+echo "=== claude-everywhere E2E Test ==="
 echo "Test root: $TEST_ROOT"
 echo ""
 
