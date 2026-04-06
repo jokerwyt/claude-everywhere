@@ -42,12 +42,32 @@ The user will provide a git repo URL (from the README). The repo can be empty or
    **Important**: do NOT read `settings.json` after this step — step 5 handles it. After `git reset`, the git index may differ from the working tree for files that existed locally; ignore the index and proceed directly to step 4.
 3. If the remote is empty: create the scaffolding files (`sync-hook.sh`, `.gitignore`) in `~/.claude/` — see "Scaffolding Files" section below.
 4. Run `chmod +x ~/.claude/sync-hook.sh`
-5. **ALWAYS run this command** — even if you think the hook might already be present. It is idempotent and handles all cases (creates settings.json if missing, preserves all existing keys, inserts the hook as the first SessionStart entry):
+5. **ALWAYS run this command** — even if you think the hook might already be present. It is idempotent and handles all cases: merges the remote settings.json (from git index) with local settings.json (local keys take priority), adds the sync hook as the first SessionStart entry, and preserves all existing settings from both machines:
    ```bash
    python3 -c "
-   import json, os
+   import json, os, subprocess
    path = os.path.expanduser('~/.claude/settings.json')
-   settings = json.load(open(path)) if os.path.exists(path) else {}
+   local = json.load(open(path)) if os.path.exists(path) else {}
+   # Try to read remote settings.json from git index
+   try:
+       remote_str = subprocess.check_output(['git', 'show', 'HEAD:settings.json'], cwd=os.path.expanduser('~/.claude'), stderr=subprocess.DEVNULL).decode()
+       remote = json.loads(remote_str)
+   except Exception:
+       remote = {}
+   # Deep merge: remote as base, local overrides
+   def merge(base, override):
+       result = dict(base)
+       for k, v in override.items():
+           if k in result and isinstance(result[k], dict) and isinstance(v, dict):
+               result[k] = merge(result[k], v)
+           elif k in result and isinstance(result[k], list) and isinstance(v, list):
+               # For lists, use override's version (local wins)
+               result[k] = v
+           else:
+               result[k] = v
+       return result
+   settings = merge(remote, local)
+   # Add sync hook
    hook_cmd = 'bash ~/.claude/sync-hook.sh'
    hooks = settings.setdefault('hooks', {})
    session_hooks = hooks.setdefault('SessionStart', [])
